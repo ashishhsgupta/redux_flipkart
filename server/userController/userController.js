@@ -75,24 +75,64 @@ export const productsList = (req, res) => {
     });
 }
 
-export const orderProduct = (res, req) => {
-    console.log('request body:', req.body);
-   const {name, mobile, pinCode, locality, address, city, state, cartItems, totalPrice, totalQuantity, totalDiscountPrice, totalSavings } = req.body;
+export const saveOrders = async(req, res) => {
+    try{ 
+      const {
+        name, mobile, address, pinCode, locality, city, state, items, totalPrice, totalQuantity, totalDiscountedPrice, totalsavings } = req.body;
+        console.log('request body:', req.body);
 
-if(!name || !mobile || !pinCode || !locality || !address || !city || !state || !cartItems || !totalPrice || !totalQuantity || !totalDiscountPrice || !totalSavings) {
-    return res.status(400).json({message: 'Please fill all the fields'});
+        if(!Array.isArray(items)) {
+            throw new Error("Items should be an array");
+        }
+ 
+      const [orderResult] = await db.query(
+     `INSERT INTO orders (name, mobile, address, pinCode, locality, city, state, totalPrice, totalQuantity, totalDiscountPrice, totalSavings) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+     [name, mobile, address, pinCode, locality, city, state, totalPrice, totalQuantity, totalDiscountedPrice, totalsavings]
+     );
+    console.log('Order result:', orderResult);
+    const orderID = orderResult.insertId;
+    console.log('Order inserted with ID:', orderID);
+
+    
+
+    // if(!orderID){
+    //     throw new Error("Failed to retrive the insertID for the new order");
+    // }
+
+     //const orderID = orderResult.insertId;
+
+     const itemPromises = items.map((item, index) =>{
+        console.log(`inserting item ${index + 1 }:`, item);
+      return db.query(
+    `INSERT INTO order_items (orderID, itemName, price, quantity) VALUES (?, ?, ?, ?)`,
+    [orderID, item.itemName, item.price, item.quantity]
+   )
+});
+await Promise.all(itemPromises);
+console.log('All items inserted successfully');
+res.json({success: true, orderID });
+
+   //await Promise.all(itemPromises);
+//    const itemResults = await Promise.all(itemPromises);
+//    console.log('Item results:', itemResults);
+
+//    res.json({ success: true, orderID });
+
+//  .catch (error => {
+//     console.error('error saving order:', error);
+//     throw error;
+// //});
+//});
+//await Promise.all(itemPromises);
+//console.log('All items inserted successfully');
+
+// res.json({success: true, orderID});
+} catch (error) {
+    console.error('error saving order:', error);
+    res.status(500).json({success: false, message: 'failed to save order'});
 }
+};
 
-   const orderID = uuidv4();
-   const sql = 'INSERT INTO orders (orderID, name, mobile, pinCode, locality, address, city, state, cartItems, totalPrice, totalQuantity, totalDiscountPrice, totalSavings) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
-
-   const values = [orderID, name, mobile, pinCode, locality, address, city, state, JSON.stringify(cartItems), totalPrice, totalQuantity, totalDiscountPrice, totalSavings];
-
-   db.query(sql, values, (err, result) => {
-    if(err) throw err;
-        res.send({message: 'Order saved', orderID});
-   });
-}
 
 
 

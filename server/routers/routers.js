@@ -1,5 +1,5 @@
 import express from "express";
-import { userSignup, userSignin, productsList, orderProduct } from '../userController/userController.js';
+import { userSignup, userSignin, productsList, saveOrders} from '../userController/userController.js';
 
 
 const router = express.Router();
@@ -11,6 +11,6 @@ const router = express.Router();
 router.get('/api/v1/getProducts', productsList)
 router.post('/api/v1/signup', userSignup);
 router.post('/api/v1/signin', userSignin);
-router.post('/api/v1/orderItem', orderProduct);
+router.post('/api/v1/saveOrder', saveOrders);
 
 export default router;
